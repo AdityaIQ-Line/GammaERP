@@ -39,6 +39,8 @@ A clean, production-ready starter template built with React, TypeScript, Vite, a
 npm install
 ```
 
+The `shadcn` CLI is not installed as a dependency (it pulled a noisy deprecated transitive package on install). Shared Tailwind helpers live in `src/styles/shadcn-tailwind.css`. To add or update UI from the registry, run e.g. `npx shadcn@latest add <component>` and merge any changes from the package’s `tailwind.css` into that file if needed.
+
 ### 2. Start Development Server
 
 ```bash

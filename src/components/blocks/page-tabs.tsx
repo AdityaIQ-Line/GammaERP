@@ -1,7 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 
-interface PageTab {
+export interface PageTab {
   value: string
   label: string
   badge?: string | number

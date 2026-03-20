@@ -77,11 +77,6 @@ export function RatesPage() {
   const categories = data.categories
   const customers = data.customers
 
-  const selectedCategory = formCategoryId
-    ? data.getCategory(formCategoryId)
-    : undefined
-  const categoryUnit = selectedCategory?.dose_unit ?? "—"
-
   const openCreate = () => {
     setFormCategoryId(categories[0]?.category_id ?? "")
     setFormPricingType("By Carton")

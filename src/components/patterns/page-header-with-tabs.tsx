@@ -1,14 +1,11 @@
 import { PageHeader } from "@/components/blocks/page-header"
-import { PageTabs } from "@/components/blocks/page-tabs"
+import { PageTabs, type PageTab } from "@/components/blocks/page-tabs"
 
 interface PageHeaderWithTabsProps {
   title: string
   leading?: React.ReactNode
   actions?: React.ReactNode
-  tabs: Array<{
-    value: string
-    label: string
-  }>
+  tabs: PageTab[]
   defaultValue?: string
   value?: string
   onValueChange?: (value: string) => void

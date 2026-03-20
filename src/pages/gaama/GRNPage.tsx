@@ -654,7 +654,7 @@ export function GRNPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>GRN Number</Label>
-                <Input value={mode === "create" ? "(Auto on save)" : (data.getGRN(selectedId ?? "")?.grn_number ?? "—")} readOnly className="bg-muted" />
+                <Input value={data.getGRN(selectedId ?? "")?.grn_number ?? "—"} readOnly className="bg-muted" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
