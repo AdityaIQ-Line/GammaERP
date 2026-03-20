@@ -799,11 +799,11 @@ export function SalesOrdersPage() {
 
             {/* Sticker Range — fields: Pencil f7Kvs; summary: Pencil xzzpc */}
             {isStickerType && (
-              <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-6 space-y-4 shadow-sm">
-                <h2 className="text-lg font-semibold text-[#0a0a0a]">Sticker Range</h2>
+              <div className="rounded-[10px] border border-border bg-card p-6 space-y-4 shadow-sm">
+                <h2 className="text-lg font-semibold text-foreground">Sticker Range</h2>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-8">
                   <div className="space-y-2 min-w-0">
-                    <Label className="text-sm font-medium text-[#0a0a0a]">Starting sticker number</Label>
+                    <Label className="text-sm font-medium text-foreground">Starting sticker number</Label>
                     <Input
                       type="number"
                       min={1}
@@ -811,7 +811,7 @@ export function SalesOrdersPage() {
                       value={stickerRangeStart}
                       onChange={(e) => setStickerRangeStart(e.target.value)}
                       placeholder={qtyNum > 0 ? "Auto-filled" : "Enter quantity first"}
-                      className="h-9 rounded-lg border-[#e5e7eb] bg-[#f9fafb]"
+                      className="h-9 rounded-lg border border-input bg-muted/50"
                     />
                     <p className="text-xs text-muted-foreground">
                       Auto-filled from the next number after the{" "}
@@ -820,13 +820,13 @@ export function SalesOrdersPage() {
                     </p>
                   </div>
                   <div className="space-y-2 min-w-0">
-                    <Label className="text-sm font-medium text-[#0a0a0a]">Ending Sticker Number</Label>
+                    <Label className="text-sm font-medium text-foreground">Ending Sticker Number</Label>
                     <Input
                       type="number"
                       readOnly
                       value={computedStickerEnd}
                       placeholder="Auto-calculated"
-                      className="h-9 rounded-lg border-[#e5e7eb] bg-[#f9fafb]/80 opacity-90"
+                      className="h-9 rounded-lg border border-input bg-muted/40 opacity-90"
                     />
                     <p className="text-xs text-muted-foreground">
                       Auto-calculated:{" "}
@@ -847,7 +847,7 @@ export function SalesOrdersPage() {
                   const unitWord = measurementType === "bag" ? "bags" : "cartons"
                   return (
                     <div
-                      className="rounded-[10px] border border-[#96f7e4] pt-[17px] pr-[17px] pb-2 pl-[17px]"
+                      className="rounded-[10px] border border-primary/25 bg-primary/5 pt-[17px] pr-[17px] pb-2 pl-[17px]"
                       style={{ backgroundColor: "#f0fdfaff" }}
                     >
                       <div className="flex gap-3 items-start">
@@ -858,8 +858,8 @@ export function SalesOrdersPage() {
                           <Info className="h-4 w-4 stroke-[2.5]" strokeWidth={2.5} />
                         </div>
                         <div className="min-w-0 flex-1 space-y-1 pt-0.5">
-                          <p className="text-sm font-semibold text-[#0b4f4a]">Sticker Range Information</p>
-                          <p className="text-xs leading-relaxed text-[#00786f]">
+                          <p className="text-sm font-semibold text-foreground">Sticker Range Information</p>
+                          <p className="text-xs leading-relaxed text-muted-foreground">
                             {qtyNum > 0 ? (
                               <>
                                 Total stickers: {qtyNum} {unitWord}
@@ -868,7 +868,7 @@ export function SalesOrdersPage() {
                               <>Total stickers: — (enter quantity)</>
                             )}
                           </p>
-                          <p className="text-xs leading-relaxed text-[#00786f]">
+                          <p className="text-xs leading-relaxed text-muted-foreground">
                             {hasRange ? (
                               <>
                                 Range: {startNum} to {endNum}
@@ -877,7 +877,7 @@ export function SalesOrdersPage() {
                               <>Range: —</>
                             )}
                           </p>
-                          <p className="text-xs leading-relaxed text-[#00786f]">
+                          <p className="text-xs leading-relaxed text-muted-foreground">
                             These serial numbers will be mapped to this sales order.
                           </p>
                         </div>
@@ -978,21 +978,17 @@ export function SalesOrdersPage() {
             />
             <div className="space-y-6 px-6 py-4">
               <div className="overflow-hidden rounded-[10px] border border-border shadow-sm">
-                <div className="flex flex-col gap-4 bg-gradient-to-br from-sky-50 via-teal-50/90 to-emerald-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between dark:from-sky-950/35 dark:via-teal-950/30 dark:to-emerald-950/35">
+                <div className="flex flex-col gap-4 bg-muted/40 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-teal-800/70 dark:text-teal-200/70">
-                      Order number
-                    </p>
-                    <p className="font-mono text-lg font-semibold text-teal-900 dark:text-teal-100">
-                      {viewSoNum}
-                    </p>
+                    <p className="text-sm font-medium text-muted-foreground">Order number</p>
+                    <p className="font-mono text-lg font-semibold text-foreground">{viewSoNum}</p>
                   </div>
                   <Badge
                     className={cn(
                       "shrink-0 border px-3 py-1.5 text-sm font-medium",
                       isSalesOrderApprovedStatus(viewOrder.order_status)
-                        ? "border-emerald-200 bg-emerald-100/90 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
-                        : "border-slate-200 bg-slate-100/90 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200",
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-border bg-secondary text-secondary-foreground",
                     )}
                   >
                     {viewOrder.order_status}
@@ -1024,31 +1020,31 @@ export function SalesOrdersPage() {
                     <div className="space-y-4">
                       <SalesOrderViewHighlight
                         label="Product Category"
-                        boxClassName="border-blue-200 bg-blue-50/80 dark:bg-blue-950/30"
+                        boxClassName="border-border bg-muted/40"
                       >
                         {viewCat?.category_name ?? viewOrder.category_name ?? "—"}
                       </SalesOrderViewHighlight>
                       <SalesOrderViewHighlight
                         label="Product"
-                        boxClassName="border-emerald-200 bg-emerald-50/80 dark:bg-emerald-950/30"
+                        boxClassName="border-border bg-muted/40"
                       >
                         {viewProductName}
                       </SalesOrderViewHighlight>
                       <SalesOrderViewHighlight
                         label="Quantity"
-                        boxClassName="border-violet-200 bg-violet-50/80 dark:bg-violet-950/30"
+                        boxClassName="border-border bg-muted/40"
                       >
                         {viewQty} {viewOrder.unit ? ` ${viewOrder.unit}` : ""}
                       </SalesOrderViewHighlight>
                       <SalesOrderViewHighlight
                         label="Value of Goods (₹)"
-                        boxClassName="border-amber-200 bg-amber-50/80 dark:bg-amber-950/30"
+                        boxClassName="border-border bg-muted/40"
                       >
                         ₹{(viewOrder.total_amount ?? 0).toLocaleString("en-IN")}
                       </SalesOrderViewHighlight>
                       <SalesOrderViewHighlight
                         label="Rate Master (₹ / unit)"
-                        boxClassName="border-sky-200 bg-sky-50/80 dark:bg-sky-950/30"
+                        boxClassName="border-border bg-muted/40"
                       >
                         {viewRate?.rate_value != null
                           ? `₹${viewRate.rate_value.toLocaleString("en-IN")}`

@@ -358,9 +358,10 @@ export function GRNPage() {
       ? `${editingGrn.sticker_range_start} to ${editingGrn.sticker_range_end}`
       : "—"
 
-  const selectTriggerPencil = "h-9 w-full rounded-lg border border-transparent bg-[#f3f3f5] shadow-none focus:ring-1 focus:ring-primary/30"
-  const inputPencil = "h-9 rounded-lg border-[#d1d5dc] bg-white"
-  const inputPencilMuted = "h-9 rounded-lg border-transparent bg-[#f3f3f5] shadow-none"
+  const selectTriggerPencil =
+    "h-9 w-full rounded-lg border border-input bg-muted/50 shadow-none focus-visible:ring-1 focus-visible:ring-primary/30"
+  const inputPencil = "h-9 rounded-lg border border-input bg-background"
+  const inputPencilMuted = "h-9 rounded-lg border-transparent bg-muted"
 
   const useFullGrnLayout = mode === "create" || mode === "edit"
 
@@ -379,12 +380,12 @@ export function GRNPage() {
       {useFullGrnLayout ? (
         <>
           {/* Card: Select Customer & Sales Order — matches Pencil node 4f5Wf; edit: read-only (same data as create) */}
-          <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 md:p-6 space-y-4 shadow-sm">
-            <h2 className="text-base font-semibold text-[#0a0a0a]">Select Customer &amp; Sales Order</h2>
+          <div className="rounded-[10px] border border-border bg-card p-5 md:p-6 space-y-4 shadow-sm">
+            <h2 className="text-base font-semibold text-foreground">Select Customer &amp; Sales Order</h2>
             {mode === "create" ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-[#0a0a0a]">
+                  <Label className="text-xs font-medium text-foreground">
                     <span className="text-destructive">*</span> Customer Name
                   </Label>
                   <Select value={customerId} onValueChange={(v) => { setCustomerId(v); setSalesOrderId(""); }}>
@@ -401,7 +402,7 @@ export function GRNPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-[#0a0a0a]">
+                  <Label className="text-xs font-medium text-foreground">
                     <span className="text-destructive">*</span> Sales Order Number
                   </Label>
                   <Select value={salesOrderId} onValueChange={setSalesOrderId}>
@@ -421,7 +422,7 @@ export function GRNPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-[#0a0a0a]">Customer Name</Label>
+                  <Label className="text-xs font-medium text-foreground">Customer Name</Label>
                   <Input
                     readOnly
                     value={
@@ -434,7 +435,7 @@ export function GRNPage() {
                   <p className="text-xs text-muted-foreground">Linked to this GRN (read-only)</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-[#0a0a0a]">Sales Order Number</Label>
+                  <Label className="text-xs font-medium text-foreground">Sales Order Number</Label>
                   <Input
                     readOnly
                     value={
@@ -451,14 +452,9 @@ export function GRNPage() {
             )}
 
             {selectedOrder ? (
-              <div
-                className="rounded-[10px] border border-[#96f7e4] p-3 md:p-4 space-y-3"
-                style={{
-                  background: "linear-gradient(135deg, #f0fdfaf2 0%, #eff6fff2 100%)",
-                }}
-              >
+              <div className="rounded-[10px] border border-primary/25 bg-primary/5 p-3 md:p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-[#0b4f4a]">Sales Order Information</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Sales Order Information</h3>
                   <Badge className="border-0 bg-primary text-primary-foreground hover:bg-primary">From sales order</Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -535,14 +531,9 @@ export function GRNPage() {
                 </div>
               </div>
             ) : editingGrn ? (
-              <div
-                className="rounded-[10px] border border-[#96f7e4] p-3 md:p-4 space-y-3"
-                style={{
-                  background: "linear-gradient(135deg, #f0fdfaf2 0%, #eff6fff2 100%)",
-                }}
-              >
+              <div className="rounded-[10px] border border-primary/25 bg-primary/5 p-3 md:p-4 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-[#0b4f4a]">Sales Order Information</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Sales Order Information</h3>
                   <Badge variant="secondary" className="border border-border bg-background">
                     From GRN snapshot
                   </Badge>
@@ -622,8 +613,8 @@ export function GRNPage() {
           {selectedOrder || mode === "edit" ? (
             <>
           {/* Card: GRN Details */}
-          <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 md:p-6 space-y-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#0a0a0a]">GRN Details</h2>
+          <div className="rounded-[10px] border border-border bg-card p-5 md:p-6 space-y-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">GRN Details</h2>
             <div className="grid h-fit grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-1 min-w-0">
                 <Label className="text-xs font-medium">
@@ -709,15 +700,15 @@ export function GRNPage() {
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 rows={4}
-                className="min-h-[100px] rounded-lg border-[#d1d5dc] bg-white resize-y"
+                className="min-h-[100px] rounded-lg border border-input bg-background resize-y"
               />
             </div>
           </div>
 
           {/* Card: Pricing & GST */}
-          <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 md:p-6 space-y-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#0a0a0a]">Pricing &amp; GST Details</h2>
-            <p className="text-sm text-[#4a5565]">
+          <div className="rounded-[10px] border border-border bg-card p-5 md:p-6 space-y-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Pricing &amp; GST Details</h2>
+            <p className="text-sm text-muted-foreground">
               Pricing information will be auto-fetched when creating Challan. Rate per unit is optional.
             </p>
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
@@ -781,8 +772,8 @@ export function GRNPage() {
           </div>
 
           {/* Card: Processing & Storage */}
-          <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 md:p-6 space-y-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#0a0a0a]">Processing &amp; Storage Details</h2>
+          <div className="rounded-[10px] border border-border bg-card p-5 md:p-6 space-y-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground">Processing &amp; Storage Details</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label className="text-sm font-medium">Processing Priority</Label>
