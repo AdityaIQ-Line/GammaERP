@@ -124,6 +124,7 @@ export type OrderStatus =
   | "confirmed"
   | "Draft"
   | "Approved"
+  | "approved"
   | "Completed"
   | "Cancelled"
   | "in_production"

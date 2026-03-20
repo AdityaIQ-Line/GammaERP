@@ -9,6 +9,18 @@ export default defineConfig({
   plugins: [react(), svgr(), tailwindcss()],
   build: {
     chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        /** Split only stable, low-dependency packages to avoid circular chunk graphs */
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined
+          if (id.includes("react-dom")) return "react-dom"
+          if (id.includes("react-router")) return "react-router"
+          if (id.includes("lucide-react")) return "lucide"
+          return undefined
+        },
+      },
+    },
   },
   resolve: {
     alias: {

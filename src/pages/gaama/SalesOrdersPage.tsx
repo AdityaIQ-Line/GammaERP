@@ -138,6 +138,7 @@ function addDaysToIsoDate(isoDateYmd: string, days: number): string {
 const orderStatusColors: Record<string, "default" | "secondary" | "outline"> = {
   Draft: "secondary",
   Approved: "outline",
+  approved: "outline",
   draft: "secondary",
   confirmed: "outline",
   in_production: "default",
@@ -451,8 +452,8 @@ export function SalesOrdersPage() {
   const orderStatusOptions = React.useMemo(() => {
     const s = new Set<string>()
     for (const o of orders) {
-      const raw = String(o.order_status ?? "").trim()
-      if (raw) s.add(raw)
+      const raw = String(o.order_status).trim()
+      if (raw.length > 0) s.add(raw)
     }
     return [...s].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }))
   }, [orders])
@@ -486,7 +487,7 @@ export function SalesOrdersPage() {
     return (
       (soNum ?? "").toLowerCase().includes(term) ||
       custName.toLowerCase().includes(term) ||
-      (o.order_status ?? "").toLowerCase().includes(term)
+      String(o.order_status).toLowerCase().includes(term)
     )
   })
 
@@ -975,7 +976,8 @@ export function SalesOrdersPage() {
                   <Badge
                     className={cn(
                       "shrink-0 border px-3 py-1.5 text-sm font-medium",
-                      String(viewOrder.order_status).toLowerCase() === "approved"
+                      viewOrder.order_status === "Approved" ||
+                      viewOrder.order_status === "approved"
                         ? "border-emerald-200 bg-emerald-100/90 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200"
                         : "border-slate-200 bg-slate-100/90 text-slate-700 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200",
                     )}
