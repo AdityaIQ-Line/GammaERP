@@ -45,6 +45,8 @@ The `shadcn` CLI is not installed as a dependency (it pulled a noisy deprecated 
 
 Gaama modules load demo rows from `src/data/gaama-seed-data.ts`. On first run (or when a collection in `localStorage` is empty), that collection is filled from the seed so lists, tabs, and workflows have sample data. To wipe everything and start from seed again, clear site data for the app origin or remove the `gaama-erp-data` key in DevTools → Application.
 
+**Vercel / production:** Demo data is still **only in the visitor’s browser** (`localStorage`), not on the server—so every device and browser profile starts fresh until it loads the app once. If you see empty lists after a deploy, hard-refresh, try a private window, or clear site data for your Vercel URL so the app can apply the seed again. The repo includes `vercel.json` SPA rewrites so client routes (e.g. `/customers`) load the app instead of a 404.
+
 ### 3. Start Development Server
 
 ```bash

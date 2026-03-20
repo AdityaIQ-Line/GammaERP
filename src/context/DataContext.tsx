@@ -75,10 +75,11 @@ function generateId(prefix: string): string {
 }
 
 /** If a collection in localStorage is missing or empty, fill from demo seed so every module has rows. */
-function mergeEmptyCollections(parsed: Partial<DataState>): DataState {
+function mergeEmptyCollections(parsed: Partial<DataState> | null | undefined): DataState {
+  const safe = parsed && typeof parsed === "object" ? parsed : {}
   const seed = createGaamaSeedData()
   const pick = <K extends keyof DataState>(key: K): DataState[K] => {
-    const v = parsed[key]
+    const v = safe[key as keyof typeof safe]
     return Array.isArray(v) && v.length > 0 ? (v as DataState[K]) : seed[key]
   }
   return {
@@ -96,14 +97,19 @@ function mergeEmptyCollections(parsed: Partial<DataState>): DataState {
 }
 
 function loadState(storageKey: string): DataState {
+  if (typeof window === "undefined") {
+    return createGaamaSeedData()
+  }
   try {
-    const raw = localStorage.getItem(storageKey)
+    const raw = window.localStorage.getItem(storageKey)
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<DataState>
-      return mergeEmptyCollections(parsed)
+      const parsed = JSON.parse(raw) as unknown
+      return mergeEmptyCollections(
+        parsed && typeof parsed === "object" ? (parsed as Partial<DataState>) : null
+      )
     }
   } catch {
-    // ignore
+    // Corrupt JSON, privacy mode, or storage blocked — fall back to demo seed
   }
   return createGaamaSeedData()
 }
@@ -121,7 +127,12 @@ export function DataProvider({
   const [currentRole, setCurrentRole] = React.useState<UserRole>("admin")
 
   React.useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(state))
+    if (typeof window === "undefined") return
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(state))
+    } catch {
+      // Quota exceeded or storage disabled — in-memory state still works for this session
+    }
   }, [state, storageKey])
 
   const addCustomer: DataContextValue["addCustomer"] = (c) => {
