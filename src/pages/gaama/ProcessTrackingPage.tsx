@@ -36,9 +36,8 @@ import {
 } from "@/components/ui/empty"
 import { useData, canAccess } from "@/context/DataContext"
 import type { GRN, GRNStatus } from "@/lib/gaama-types"
-import { GitBranch, Search, Download, Pencil } from "lucide-react"
+import { GitBranch, Search, Download } from "lucide-react"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 
 const PROCESS_STATUSES: { value: GRNStatus; label: string }[] = [
   { value: "In Progress", label: "In Progress" },
@@ -112,10 +111,21 @@ export function ProcessTrackingPage() {
     }))
   }, [processGrns, data])
 
-  const handleOpenUpdate = (g: GRN) => {
+  const openStatusDialog = (g: GRN, next: GRNStatus) => {
     setUpdateModalGrnId(g.grn_id)
-    setUpdateStatus((g.status as GRNStatus) ?? "In Progress")
+    setUpdateStatus(next)
     setUpdateRemarks("")
+  }
+
+  const handleRowStatusChange = (g: GRN, value: string) => {
+    const next = value as GRNStatus
+    if (next === g.status) return
+    if (next === "Hold" || next === "Rejected") {
+      openStatusDialog(g, next)
+      return
+    }
+    data.updateGRN(g.grn_id, { status: next })
+    toast.success("Status updated.")
   }
 
   const handleUpdateSubmit = (e: React.FormEvent) => {
@@ -244,12 +254,6 @@ export function ProcessTrackingPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {filteredRows.length > 0 && (
-                <Button variant="outline" onClick={handleExport}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-              )}
             </div>
 
             <div className="rounded-md border">
@@ -264,8 +268,7 @@ export function ProcessTrackingPage() {
                     <TableHead>Quantity</TableHead>
                     <TableHead>Units</TableHead>
                     <TableHead>Created At</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="min-w-[160px]">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -282,12 +285,32 @@ export function ProcessTrackingPage() {
                         {(g.created_at ?? g.received_date)?.slice(0, 19).replace("T", " ") ?? "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{g.status}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" title="Update status" onClick={() => handleOpenUpdate(g)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <Select
+                          value={
+                            g.status && PROCESS_STATUSES.some((s) => s.value === g.status)
+                              ? (g.status as string)
+                              : g.status
+                                ? (g.status as string)
+                                : PROCESS_STATUSES[0].value
+                          }
+                          onValueChange={(v) => handleRowStatusChange(g, v)}
+                        >
+                          <SelectTrigger className="w-[min(100%,11rem)]" size="sm">
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {g.status && !PROCESS_STATUSES.some((s) => s.value === g.status) ? (
+                              <SelectItem value={g.status as string} disabled>
+                                {g.status} (current)
+                              </SelectItem>
+                            ) : null}
+                            {PROCESS_STATUSES.map((s) => (
+                              <SelectItem key={s.value} value={s.value}>
+                                {s.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                     </TableRow>
                   ))}

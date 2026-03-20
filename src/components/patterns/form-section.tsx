@@ -14,6 +14,8 @@ interface FormSectionProps {
   aside?: boolean
   /** Hide the bottom separator */
   noSeparator?: boolean
+  /** No vertical padding on the section body; height fits content */
+  compact?: boolean
 }
 
 /**
@@ -43,10 +45,16 @@ export function FormSection({
   className,
   aside = false,
   noSeparator = false,
+  compact = false,
 }: FormSectionProps) {
   return (
     <div className={cn("space-y-0", className)}>
-      <div className={cn(aside ? "grid gap-8 md:grid-cols-3 py-6" : "space-y-4 py-6")}>
+      <div
+        className={cn(
+          aside ? "grid gap-8 md:grid-cols-3" : "space-y-4",
+          compact ? "py-0 h-fit min-h-0" : "py-6",
+        )}
+      >
         {/* Title + description */}
         <div className={cn(aside ? "md:col-span-1 space-y-1" : "space-y-1")}>
           <h3 className="text-base font-semibold leading-tight">{title}</h3>

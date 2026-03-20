@@ -11,13 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -42,18 +35,18 @@ import {
 } from "@/components/ui/select"
 import { useData, canAccess } from "@/context/DataContext"
 import type { Rate, PricingType } from "@/lib/gaama-types"
-import { Plus, IndianRupee, Search, Eye, Pencil, Trash2 } from "lucide-react"
+import { Plus, IndianRupee, Search, Pencil, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { PageHeaderWithBack } from "@/components/patterns/page-header-with-back"
 
 const PRICING_TYPES: PricingType[] = ["By Carton", "By Weight", "By Vehicle"]
 const STATUS_OPTIONS = ["Active", "Inactive"]
 
-type ModalMode = "create" | "edit" | "view" | null
+type RatesFormMode = "create" | "edit" | null
 
 export function RatesPage() {
   const data = useData()
-  const [mode, setMode] = React.useState<ModalMode>(null)
+  const [mode, setMode] = React.useState<RatesFormMode>(null)
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
 
   // Gaama ERP 2 form state
@@ -71,6 +64,11 @@ export function RatesPage() {
 
   const [deleteTargetId, setDeleteTargetId] = React.useState<string | null>(null)
   const [searchTerm, setSearchTerm] = React.useState("")
+
+  const closeRateForm = React.useCallback(() => {
+    setMode(null)
+    setSelectedId(null)
+  }, [])
 
   const allowed = canAccess(data.currentRole, "rates")
   const rates = data.rates
@@ -104,21 +102,6 @@ export function RatesPage() {
     setFormEffectiveTo(r.effective_to?.slice(0, 10) ?? "")
     setSelectedId(r.rate_id)
     setMode("edit")
-  }
-
-  const openView = (r: Rate) => {
-    const from = r.effective_from ?? r.effective_date ?? new Date().toISOString()
-    setFormCategoryId(r.category_id)
-    setFormPricingType((r.pricing_type as PricingType) ?? "By Carton")
-    setFormRateValue(String(r.rate_value ?? r.rate ?? ""))
-    setFormStatus(r.status ?? "Active")
-    setFormDescription(r.description ?? "")
-    setCustomerSpecific(!!r.customer_id)
-    setFormCustomerId(r.customer_id ?? "")
-    setFormEffectiveFrom(from.slice(0, 10))
-    setFormEffectiveTo(r.effective_to?.slice(0, 10) ?? "")
-    setSelectedId(r.rate_id)
-    setMode("view")
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -158,11 +141,11 @@ export function RatesPage() {
 
     if (mode === "create") {
       data.addRate(payload)
-      setMode(null)
+      closeRateForm()
       toast.success("Rate created.")
     } else if (mode === "edit" && selectedId) {
       data.updateRate(selectedId, payload)
-      setMode(null)
+      closeRateForm()
       toast.success("Rate updated.")
     }
   }
@@ -179,7 +162,6 @@ export function RatesPage() {
     }
   }
 
-  const isView = mode === "view"
   const filteredRates = rates.filter((r) => {
     const catName = data.getCategory(r.category_id)?.category_name ?? ""
     const custName = r.customer_name ?? ""
@@ -202,7 +184,6 @@ export function RatesPage() {
           <Select
             value={formCategoryId}
             onValueChange={(v) => setFormCategoryId(v)}
-            disabled={isView}
           >
             <SelectTrigger className="h-9 bg-muted/60 border-border">
               <SelectValue placeholder="Select category" />
@@ -223,7 +204,6 @@ export function RatesPage() {
           <Select
             value={formPricingType}
             onValueChange={(v) => setFormPricingType(v as PricingType)}
-            disabled={isView}
           >
             <SelectTrigger className="h-9 bg-muted/60 border-border">
               <SelectValue />
@@ -241,7 +221,7 @@ export function RatesPage() {
           <Label>
             Status <span className="text-destructive">*</span>
           </Label>
-          <Select value={formStatus} onValueChange={setFormStatus} disabled={isView}>
+          <Select value={formStatus} onValueChange={setFormStatus}>
             <SelectTrigger className="h-9 bg-muted/60 border-border">
               <SelectValue />
             </SelectTrigger>
@@ -265,7 +245,6 @@ export function RatesPage() {
             placeholder="Enter rate"
             value={formRateValue}
             onChange={(e) => setFormRateValue(e.target.value)}
-            readOnly={isView}
             className="h-9 bg-muted/60 border-border placeholder:text-muted-foreground"
           />
         </div>
@@ -279,7 +258,6 @@ export function RatesPage() {
             id="customer-specific-rate"
             checked={customerSpecific}
             onCheckedChange={(v) => setCustomerSpecific(!!v)}
-            disabled={isView}
           />
           <Label htmlFor="customer-specific-rate" className="text-base font-medium cursor-pointer">
             Customer Specific Rate
@@ -289,7 +267,7 @@ export function RatesPage() {
       {customerSpecific && (
         <div className="space-y-2 pl-0 sm:pl-11">
           <Label>Customer</Label>
-          <Select value={formCustomerId} onValueChange={setFormCustomerId} disabled={isView}>
+          <Select value={formCustomerId} onValueChange={setFormCustomerId}>
             <SelectTrigger className="h-9 bg-muted/60 border-border">
               <SelectValue placeholder="Select customer" />
             </SelectTrigger>
@@ -313,7 +291,6 @@ export function RatesPage() {
               type="date"
               value={formEffectiveFrom}
               onChange={(e) => setFormEffectiveFrom(e.target.value)}
-              readOnly={isView}
               className="h-9 bg-muted/60 border-border"
             />
           </div>
@@ -323,7 +300,6 @@ export function RatesPage() {
               type="date"
               value={formEffectiveTo}
               onChange={(e) => setFormEffectiveTo(e.target.value)}
-              readOnly={isView}
               className="h-9 bg-muted/60 border-border"
             />
           </div>
@@ -336,7 +312,6 @@ export function RatesPage() {
           placeholder="Write here..."
           value={formDescription}
           onChange={(e) => setFormDescription(e.target.value)}
-          readOnly={isView}
           rows={5}
           className="min-h-[120px] resize-y bg-background border-border"
         />
@@ -346,23 +321,28 @@ export function RatesPage() {
     </form>
   )
 
-  if (allowed && mode === "create") {
+  if (allowed && (mode === "create" || mode === "edit")) {
+    const formTitle = mode === "create" ? "Add Rate" : "Edit Rate"
     return (
       <PageShell>
         <div className="flex-1 overflow-auto">
           <div className="w-full h-full">
-            <PageHeaderWithBack title="Add Rate" noBorder backButton={{ onClick: () => setMode(null) }} />
+            <PageHeaderWithBack
+              title={formTitle}
+              noBorder
+              backButton={{ onClick: closeRateForm }}
+            />
             <div className="space-y-4 px-6 py-4 h-full">
-            <div className="rounded-lg border border-border bg-card p-6">
-              {renderRateForm(
-                <div className="flex justify-end gap-3 border-t border-border pt-6">
-                  <Button type="button" variant="outline" onClick={() => setMode(null)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Save</Button>
-                </div>
-              )}
-            </div>
+              <div className="rounded-lg border border-border bg-card p-6">
+                {renderRateForm(
+                  <div className="flex justify-end gap-3 border-t border-border pt-6">
+                    <Button type="button" variant="outline" onClick={closeRateForm}>
+                      Cancel
+                    </Button>
+                    <Button type="submit">Save</Button>
+                  </div>,
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -449,9 +429,6 @@ export function RatesPage() {
                         {r.effective_to?.slice(0, 10) ?? "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" title="View" onClick={() => openView(r)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
                         <Button variant="ghost" size="sm" title="Edit" onClick={() => openEdit(r)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -473,32 +450,6 @@ export function RatesPage() {
           </>
         )}
       </div>
-
-      <Dialog open={mode === "edit" || mode === "view"} onOpenChange={(open) => !open && setMode(null)}>
-        <DialogContent className="max-w-4xl w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto gap-0 border-border p-6 sm:p-6">
-          <DialogHeader className="space-y-0 pb-6 text-left">
-            <DialogTitle className="text-lg font-semibold">
-              {mode === "edit" ? "Edit Rate" : "Rate Details"}
-            </DialogTitle>
-          </DialogHeader>
-          {renderRateForm(
-            isView ? (
-              <DialogFooter className="border-t border-border pt-6 sm:justify-end">
-                <Button type="button" variant="outline" onClick={() => setMode(null)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            ) : (
-              <DialogFooter className="gap-3 border-t border-border pt-6 sm:justify-end">
-                <Button type="button" variant="outline" onClick={() => setMode(null)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Save</Button>
-              </DialogFooter>
-            ),
-          )}
-        </DialogContent>
-      </Dialog>
 
       <AlertDialog
         open={deleteTargetId !== null}

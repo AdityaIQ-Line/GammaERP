@@ -48,13 +48,18 @@ import {
 import { useData, canAccess } from "@/context/DataContext"
 import { useLocation, useNavigate } from "react-router-dom"
 import type { GRN } from "@/lib/gaama-types"
-import { Plus, PackageCheck, Search, Printer, Send, Eye, Pencil } from "lucide-react"
+import { Plus, PackageCheck, Search, Printer, Send, Pencil } from "lucide-react"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { PageHeaderWithBack } from "@/components/patterns/page-header-with-back"
 import { cn } from "@/lib/utils"
 
 type ModalMode = "create" | "edit" | "view" | null
+
+function formatOrderStatusLabel(status: string | undefined): string {
+  if (status == null || status === "") return "—"
+  return String(status).replace(/_/g, " ")
+}
 
 export function GRNPage() {
   const data = useData()
@@ -116,9 +121,12 @@ export function GRNPage() {
   }, [orders, customerId, totalReceivedByOrder])
 
   const selectedOrder = salesOrderId ? data.getSalesOrder(salesOrderId) : undefined
+  const editingGrn = mode === "edit" && selectedId ? data.getGRN(selectedId) : undefined
   const selectedCategory = selectedOrder?.category_id
     ? data.getCategory(selectedOrder.category_id)
-    : undefined
+    : editingGrn?.category_id
+      ? data.getCategory(editingGrn.category_id)
+      : undefined
 
   // Open view when navigated with state.openGrnId (e.g. from Sales Order View > Linked GRNs > View)
   React.useEffect(() => {
@@ -129,13 +137,22 @@ export function GRNPage() {
     navigate(location.pathname, { replace: true, state: {} })
   }, [location.state])
 
-  // Auto-fill from Sales Order
+  // Auto-fill from Sales Order (create)
   React.useEffect(() => {
     if (!selectedOrder) return
     setRadiationDose(selectedCategory?.dose_count != null ? String(selectedCategory.dose_count) : "")
     setRadiationUnit(selectedCategory?.dose_unit ?? "kGy")
     const soQty = Number(selectedOrder.quantity ?? selectedOrder.items?.[0]?.quantity ?? 0)
-    if (mode === "create" && !receivedQuantity) setReceivedQuantity(String(soQty))
+    if (mode === "create") {
+      if (!receivedQuantity) setReceivedQuantity(String(soQty))
+      const lineRate = selectedOrder.items?.[0]?.rate
+      if (lineRate != null && !Number.isNaN(lineRate)) setRate(String(lineRate))
+      if (selectedOrder.order_date) {
+        setPurchaseOrderDate(selectedOrder.order_date.slice(0, 10))
+      }
+      if (selectedOrder.net_weight) setNetWeight(selectedOrder.net_weight)
+      if (selectedOrder.gross_weight) setGrossWeight(selectedOrder.gross_weight)
+    }
   }, [selectedOrder, selectedCategory, mode])
 
   // Recompute total and GST when rate or qty or gst% change
@@ -146,6 +163,11 @@ export function GRNPage() {
   })()
   const gstAmount = (totalAmount * (parseFloat(gstPercentage) || 0)) / 100
   const totalWithGst = totalAmount + gstAmount
+
+  const closeGrnForm = React.useCallback(() => {
+    setMode(null)
+    setSelectedId(null)
+  }, [])
 
   const openCreate = () => {
     setCustomerId(customers[0]?.customer_id ?? "")
@@ -271,7 +293,7 @@ export function GRNPage() {
       remarks: remarks || undefined,
       bin_description: binDescription || undefined,
     })
-    setMode(null)
+    closeGrnForm()
     toast.success("GRN created.")
   }
 
@@ -298,7 +320,7 @@ export function GRNPage() {
       bin_description: binDescription || undefined,
       vehicle_number: vehicleNumber || undefined,
     })
-    setMode(null)
+    closeGrnForm()
     toast.success("GRN updated.")
   }
 
@@ -331,56 +353,104 @@ export function GRNPage() {
     selectedOrder?.sticker_range_start != null && selectedOrder?.sticker_range_end != null
       ? `${selectedOrder.sticker_range_start} to ${selectedOrder.sticker_range_end}`
       : "—"
+  const grnStickerRangeDisplay =
+    editingGrn?.sticker_range_start != null && editingGrn?.sticker_range_end != null
+      ? `${editingGrn.sticker_range_start} to ${editingGrn.sticker_range_end}`
+      : "—"
 
   const selectTriggerPencil = "h-9 w-full rounded-lg border border-transparent bg-[#f3f3f5] shadow-none focus:ring-1 focus:ring-primary/30"
   const inputPencil = "h-9 rounded-lg border-[#d1d5dc] bg-white"
   const inputPencilMuted = "h-9 rounded-lg border-transparent bg-[#f3f3f5] shadow-none"
 
+  const useFullGrnLayout = mode === "create" || mode === "edit"
+
   const grnEditorForm = (
-    <form onSubmit={mode === "edit" ? handleUpdateSubmit : handleSubmit} className={mode === "create" ? "space-y-4" : undefined}>
-      {mode === "create" ? (
+    <form
+      onSubmit={(e) => {
+        if (mode === "view") {
+          e.preventDefault()
+          return
+        }
+        if (mode === "edit") handleUpdateSubmit(e)
+        else handleSubmit(e)
+      }}
+      className={useFullGrnLayout ? "space-y-4" : undefined}
+    >
+      {useFullGrnLayout ? (
         <>
-          {/* Card: Select Customer & Sales Order — matches Pencil node 4f5Wf */}
+          {/* Card: Select Customer & Sales Order — matches Pencil node 4f5Wf; edit: read-only (same data as create) */}
           <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 md:p-6 space-y-4 shadow-sm">
             <h2 className="text-base font-semibold text-[#0a0a0a]">Select Customer &amp; Sales Order</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-[#0a0a0a]">
-                  <span className="text-destructive">*</span> Customer Name
-                </Label>
-                <Select value={customerId} onValueChange={(v) => { setCustomerId(v); setSalesOrderId(""); }}>
-                  <SelectTrigger className={selectTriggerPencil}>
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((c) => (
-                      <SelectItem key={c.customer_id} value={c.customer_id}>
-                        {c.customer_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {mode === "create" ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-[#0a0a0a]">
+                    <span className="text-destructive">*</span> Customer Name
+                  </Label>
+                  <Select value={customerId} onValueChange={(v) => { setCustomerId(v); setSalesOrderId(""); }}>
+                    <SelectTrigger className={selectTriggerPencil}>
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((c) => (
+                        <SelectItem key={c.customer_id} value={c.customer_id}>
+                          {c.customer_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-[#0a0a0a]">
+                    <span className="text-destructive">*</span> Sales Order Number
+                  </Label>
+                  <Select value={salesOrderId} onValueChange={setSalesOrderId}>
+                    <SelectTrigger className={selectTriggerPencil}>
+                      <SelectValue placeholder="Select sales order" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableOrders.map((o) => (
+                        <SelectItem key={o.sales_order_id} value={o.sales_order_id}>
+                          {o.sales_order_number ?? o.order_number} ({o.product_name ?? o.category_name})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-medium text-[#0a0a0a]">
-                  <span className="text-destructive">*</span> Sales Order Number
-                </Label>
-                <Select value={salesOrderId} onValueChange={setSalesOrderId}>
-                  <SelectTrigger className={selectTriggerPencil}>
-                    <SelectValue placeholder="Select sales order" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableOrders.map((o) => (
-                      <SelectItem key={o.sales_order_id} value={o.sales_order_id}>
-                        {o.sales_order_number ?? o.order_number} ({o.product_name ?? o.category_name})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-[#0a0a0a]">Customer Name</Label>
+                  <Input
+                    readOnly
+                    value={
+                      data.getCustomer(customerId)?.customer_name ??
+                      data.getGRN(selectedId ?? "")?.customer_name ??
+                      "—"
+                    }
+                    className={cn(inputPencilMuted, "text-muted-foreground")}
+                  />
+                  <p className="text-xs text-muted-foreground">Linked to this GRN (read-only)</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-[#0a0a0a]">Sales Order Number</Label>
+                  <Input
+                    readOnly
+                    value={
+                      selectedOrder?.sales_order_number ??
+                      selectedOrder?.order_number ??
+                      data.getGRN(selectedId ?? "")?.sales_order_number ??
+                      "—"
+                    }
+                    className={cn(inputPencilMuted, "text-muted-foreground")}
+                  />
+                  <p className="text-xs text-muted-foreground">Linked to this GRN (read-only)</p>
+                </div>
               </div>
-            </div>
+            )}
 
-            {selectedOrder && (
+            {selectedOrder ? (
               <div
                 className="rounded-[10px] border border-[#96f7e4] p-3 md:p-4 space-y-3"
                 style={{
@@ -391,27 +461,166 @@ export function GRNPage() {
                   <h3 className="text-sm font-semibold text-[#0b4f4a]">Sales Order Information</h3>
                   <Badge className="border-0 bg-primary text-primary-foreground hover:bg-primary">From sales order</Badge>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Shown after you select a sales order. Use these values as reference when entering the GRN below.
+                </p>
                 <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                   {[
-                    { label: "Sales Order ID", value: selectedOrder.sales_order_number ?? selectedOrder.order_number ?? selectedOrder.sales_order_id },
+                    {
+                      label: "Sales Order No.",
+                      value:
+                        selectedOrder.sales_order_number ??
+                        selectedOrder.order_number ??
+                        selectedOrder.sales_order_id,
+                    },
                     { label: "Order Date", value: selectedOrder.order_date?.slice(0, 10) ?? "—" },
-                    { label: "Customer Name", value: selectedOrder.customer_name ?? data.getCustomer(selectedOrder.customer_id)?.customer_name ?? "—" },
+                    {
+                      label: "Expected Delivery",
+                      value: selectedOrder.delivery_date?.slice(0, 10) ?? "—",
+                    },
+                    {
+                      label: "Order Status",
+                      value: formatOrderStatusLabel(selectedOrder.order_status as string | undefined),
+                    },
+                    {
+                      label: "Customer Name",
+                      value:
+                        selectedOrder.customer_name ??
+                        data.getCustomer(selectedOrder.customer_id)?.customer_name ??
+                        "—",
+                    },
                     { label: "Product Name", value: selectedOrder.product_name ?? "—" },
                     { label: "Product Category", value: selectedOrder.category_name ?? "—" },
+                    {
+                      label: "Order Basis",
+                      value: selectedOrder.order_basis ?? "—",
+                    },
+                    {
+                      label: "Measurement / Unit",
+                      value: [selectedOrder.measurement_type, selectedOrder.unit].filter(Boolean).join(" · ") || "—",
+                    },
                     { label: "Total Ordered Quantity", value: String(soOrderedQty) },
-                    { label: "Measurement Type", value: selectedOrder.measurement_type ?? selectedOrder.unit ?? "—" },
-                    { label: "Sticker Range (Mapped)", value: stickerRangeDisplay },
+                    {
+                      label: "Net Weight (SO)",
+                      value: selectedOrder.net_weight ?? "—",
+                    },
+                    {
+                      label: "Gross Weight (SO)",
+                      value: selectedOrder.gross_weight ?? "—",
+                    },
+                    {
+                      label: "Sticker Range (Mapped)",
+                      value: stickerRangeDisplay,
+                    },
+                    {
+                      label: "Rate / Unit (SO)",
+                      value:
+                        selectedOrder.items?.[0]?.rate != null
+                          ? `₹${selectedOrder.items[0].rate}`
+                          : "—",
+                    },
+                    {
+                      label: "Order Value (₹)",
+                      value:
+                        selectedOrder.total_amount != null
+                          ? selectedOrder.total_amount.toLocaleString("en-IN")
+                          : "—",
+                    },
                   ].map((row) => (
-                    <div key={row.label} className="space-y-1">
+                    <div key={row.label} className="space-y-1 min-w-0">
                       <Label className="text-xs font-medium text-muted-foreground">{row.label}</Label>
-                      <Input readOnly value={row.value} className={cn(inputPencil, "h-8 text-sm opacity-90")} />
+                      <Input readOnly value={row.value} className={cn(inputPencil, "h-8 text-sm opacity-90 min-w-0")} />
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            ) : editingGrn ? (
+              <div
+                className="rounded-[10px] border border-[#96f7e4] p-3 md:p-4 space-y-3"
+                style={{
+                  background: "linear-gradient(135deg, #f0fdfaf2 0%, #eff6fff2 100%)",
+                }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-[#0b4f4a]">Sales Order Information</h3>
+                  <Badge variant="secondary" className="border border-border bg-background">
+                    From GRN snapshot
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Linked sales order record was not found. Values below are stored on this GRN for reference.
+                </p>
+                <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {[
+                    {
+                      label: "Sales Order No.",
+                      value:
+                        editingGrn.sales_order_number ??
+                        editingGrn.sales_order_id ??
+                        "—",
+                    },
+                    { label: "Order Date", value: "—" },
+                    { label: "Expected Delivery", value: "—" },
+                    { label: "Order Status", value: "—" },
+                    {
+                      label: "Customer Name",
+                      value:
+                        editingGrn.customer_name ??
+                        data.getCustomer(editingGrn.customer_id ?? "")?.customer_name ??
+                        "—",
+                    },
+                    { label: "Product Name", value: editingGrn.product_name ?? "—" },
+                    { label: "Product Category", value: editingGrn.category_name ?? "—" },
+                    { label: "Order Basis", value: "—" },
+                    {
+                      label: "Measurement / Unit",
+                      value: editingGrn.unit ?? "—",
+                    },
+                    { label: "Total Ordered Quantity", value: "—" },
+                    {
+                      label: "Net Weight (SO)",
+                      value: editingGrn.net_weight ?? "—",
+                    },
+                    {
+                      label: "Gross Weight (SO)",
+                      value: editingGrn.gross_weight ?? "—",
+                    },
+                    {
+                      label: "Sticker Range (Mapped)",
+                      value: grnStickerRangeDisplay,
+                    },
+                    {
+                      label: "Rate / Unit (SO)",
+                      value:
+                        editingGrn.rate != null && editingGrn.rate !== ""
+                          ? `₹${editingGrn.rate}`
+                          : "—",
+                    },
+                    {
+                      label: "Order Value (₹)",
+                      value:
+                        editingGrn.total_amount != null && editingGrn.total_amount !== ""
+                          ? Number(editingGrn.total_amount).toLocaleString("en-IN")
+                          : "—",
+                    },
+                  ].map((row) => (
+                    <div key={row.label} className="space-y-1 min-w-0">
+                      <Label className="text-xs font-medium text-muted-foreground">{row.label}</Label>
+                      <Input readOnly value={row.value} className={cn(inputPencil, "h-8 text-sm opacity-90 min-w-0")} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : mode === "create" && customerId ? (
+              <p className="text-sm text-muted-foreground rounded-[10px] border border-dashed border-border bg-muted/30 px-4 py-3">
+                Select a <span className="font-medium text-foreground">Sales Order Number</span> to load sales
+                order details and GRN entry fields.
+              </p>
+            ) : null}
           </div>
 
+          {selectedOrder || mode === "edit" ? (
+            <>
           {/* Card: GRN Details */}
           <div className="rounded-[10px] border border-[#e5e7eb] bg-white p-5 md:p-6 space-y-6 shadow-sm">
             <h2 className="text-lg font-semibold text-[#0a0a0a]">GRN Details</h2>
@@ -420,8 +629,18 @@ export function GRNPage() {
                 <Label className="text-xs font-medium">
                   <span className="text-destructive">*</span> GRN Number
                 </Label>
-                <Input readOnly value="(Auto-generated on save)" className={cn(inputPencilMuted, "text-muted-foreground")} />
-                <p className="text-xs text-muted-foreground">Auto-generated</p>
+                <Input
+                  readOnly
+                  value={
+                    mode === "create"
+                      ? "(Auto-generated on save)"
+                      : data.getGRN(selectedId ?? "")?.grn_number ?? selectedId ?? "—"
+                  }
+                  className={cn(inputPencilMuted, "text-muted-foreground")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {mode === "create" ? "Auto-generated" : "GRN number"}
+                </p>
               </div>
               <div className="space-y-1 min-w-0">
                 <Label className="text-xs font-medium">Purchase Order Date</Label>
@@ -454,7 +673,9 @@ export function GRNPage() {
                   min={0}
                   value={receivedQuantity}
                   onChange={(e) => setReceivedQuantity(e.target.value)}
-                  placeholder={selectedOrder ? `Max: ${soOrderedQty} ${soUnitLabel}` : "Enter quantity"}
+                  placeholder={
+                    selectedOrder ? `Max: ${soOrderedQty} ${soUnitLabel}` : "Enter quantity"
+                  }
                   className={inputPencil}
                 />
               </div>
@@ -596,15 +817,17 @@ export function GRNPage() {
               variant="outline"
               onClick={() => {
                 if (!window.confirm("Discard changes?")) return
-                setMode(null)
+                closeGrnForm()
               }}
             >
               Cancel
             </Button>
             <Button type="submit" variant="default" className="h-9 rounded-lg px-8 font-medium shadow-none">
-              Create GRN
+              {mode === "create" ? "Create GRN" : "Save changes"}
             </Button>
           </div>
+            </>
+          ) : null}
         </>
       ) : (
         <>
@@ -810,12 +1033,11 @@ export function GRNPage() {
             </div>
           </FormSection>
 
-          {!isView && (
+          {isView && (
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setMode(null)}>
-                Cancel
+              <Button type="button" variant="outline" onClick={closeGrnForm}>
+                Close
               </Button>
-              <Button type="submit">{mode === "edit" ? "Save" : "Create GRN"}</Button>
             </DialogFooter>
           )}
         </>
@@ -823,18 +1045,18 @@ export function GRNPage() {
     </form>
   )
 
-  if (allowed && mode === "create") {
+  if (allowed && (mode === "create" || mode === "edit")) {
     return (
       <PageShell>
         <div className="flex-1 overflow-auto">
           <div className="w-full h-full">
             <PageHeaderWithBack
-              title="Create GRN"
+              title={mode === "create" ? "Create GRN" : "Edit GRN"}
               noBorder
               backButton={{
                 onClick: () => {
                   if (!window.confirm("Discard changes?")) return
-                  setMode(null)
+                  closeGrnForm()
                 },
               }}
             />
@@ -938,9 +1160,6 @@ export function GRNPage() {
                         <Badge variant="secondary">{g.status}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" title="View" onClick={() => openView(g)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
                         <Button variant="ghost" size="sm" title="Edit" onClick={() => openEdit(g)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -962,12 +1181,10 @@ export function GRNPage() {
         )}
       </div>
 
-            <Dialog open={mode === "edit" || mode === "view"} onOpenChange={(open) => !open && setMode(null)}>
+      <Dialog open={mode === "view"} onOpenChange={(open) => !open && closeGrnForm()}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {mode === "edit" ? "Edit GRN" : "GRN Details"}
-            </DialogTitle>
+            <DialogTitle>GRN Details</DialogTitle>
           </DialogHeader>
           {grnEditorForm}
         </DialogContent>

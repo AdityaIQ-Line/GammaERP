@@ -41,17 +41,21 @@ npm install
 
 The `shadcn` CLI is not installed as a dependency (it pulled a noisy deprecated transitive package on install). Shared Tailwind helpers live in `src/styles/shadcn-tailwind.css`. To add or update UI from the registry, run e.g. `npx shadcn@latest add <component>` and merge any changes from the package’s `tailwind.css` into that file if needed.
 
-### 2. Start Development Server
+### 2. Demo data (Gaama ERP)
+
+Gaama modules load demo rows from `src/data/gaama-seed-data.ts`. On first run (or when a collection in `localStorage` is empty), that collection is filled from the seed so lists, tabs, and workflows have sample data. To wipe everything and start from seed again, clear site data for the app origin or remove the `gaama-erp-data` key in DevTools → Application.
+
+### 3. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-### 3. Customize the Starter Page
+### 4. Customize the Starter Page
 
 Edit `src/pages/StarterPage.tsx` to create your home page.
 
-### 4. Add Your Routes
+### 5. Add Your Routes
 
 Update `src/app/router.tsx` to add your application routes:
 
@@ -70,7 +74,7 @@ export const router = createBrowserRouter([
 ])
 ```
 
-### 5. Configure Navigation
+### 6. Configure Navigation
 
 Update `src/lib/sidebar-config.ts` to add sidebar items:
 
@@ -82,7 +86,7 @@ export const SIDEBAR_ITEMS = [
 ] as const
 ```
 
-### 6. Use Components
+### 7. Use Components
 
 ```tsx
 import { Button } from "@/components/ui/button"
@@ -91,7 +95,7 @@ import { PageHeader } from "@/components/blocks/page-header"
 import { TwoColumnLayout } from "@/components/layouts/two-column-layout"
 ```
 
-### 7. Customize Theme
+### 8. Customize Theme
 
 Modify colors in `src/index.css` or switch themes using the theme toggle in the header.
 

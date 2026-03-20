@@ -1,4 +1,5 @@
 import * as React from "react"
+import { createGaamaSeedData } from "@/data/gaama-seed-data"
 import type {
   Customer,
   Category,
@@ -73,64 +74,38 @@ function generateId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
 }
 
+/** If a collection in localStorage is missing or empty, fill from demo seed so every module has rows. */
+function mergeEmptyCollections(parsed: Partial<DataState>): DataState {
+  const seed = createGaamaSeedData()
+  const pick = <K extends keyof DataState>(key: K): DataState[K] => {
+    const v = parsed[key]
+    return Array.isArray(v) && v.length > 0 ? (v as DataState[K]) : seed[key]
+  }
+  return {
+    customers: pick("customers"),
+    categories: pick("categories"),
+    rates: pick("rates"),
+    salesOrders: pick("salesOrders"),
+    grns: pick("grns"),
+    processTrackings: pick("processTrackings"),
+    challans: pick("challans"),
+    gatePasses: pick("gatePasses"),
+    invoices: pick("invoices"),
+    certificates: pick("certificates"),
+  }
+}
+
 function loadState(storageKey: string): DataState {
   try {
     const raw = localStorage.getItem(storageKey)
     if (raw) {
-      const parsed = JSON.parse(raw) as DataState
-      return {
-        customers: parsed.customers ?? [],
-        categories: parsed.categories ?? [],
-        rates: parsed.rates ?? [],
-        salesOrders: parsed.salesOrders ?? [],
-        grns: parsed.grns ?? [],
-        processTrackings: parsed.processTrackings ?? [],
-        challans: parsed.challans ?? [],
-        gatePasses: parsed.gatePasses ?? [],
-        invoices: parsed.invoices ?? [],
-        certificates: parsed.certificates ?? [],
-      }
+      const parsed = JSON.parse(raw) as Partial<DataState>
+      return mergeEmptyCollections(parsed)
     }
   } catch {
     // ignore
   }
-  return getInitialState()
-}
-
-function getInitialState(): DataState {
-  const now = new Date().toISOString()
-  return {
-    customers: [
-      {
-        customer_id: "cust_1",
-        customer_name: "ABC Industries",
-        company_name: "ABC Industries Pvt Ltd",
-        email: "contact@abc.com",
-        phone: "+91 9876543210",
-        billing_address: "123 Industrial Area, Mumbai",
-        shipping_addresses: ["123 Industrial Area, Mumbai"],
-        gst_number: "27AABCU9603R1ZM",
-        status: "active",
-        created_at: now,
-        updated_at: now,
-      },
-    ],
-    categories: [
-      { category_id: "cat_1", category_name: "Steel Plates", description: "Heavy duty steel", created_at: now },
-      { category_id: "cat_2", category_name: "Fasteners", description: "Bolts and nuts", created_at: now },
-    ],
-    rates: [
-      { rate_id: "rate_1", category_id: "cat_1", rate_value: 45000, currency: "INR", effective_date: now },
-      { rate_id: "rate_2", category_id: "cat_2", rate_value: 120, currency: "INR", effective_date: now },
-    ],
-    salesOrders: [],
-    grns: [],
-    processTrackings: [],
-    challans: [],
-    gatePasses: [],
-    invoices: [],
-    certificates: [],
-  }
+  return createGaamaSeedData()
 }
 
 const DataContext = React.createContext<DataContextValue | null>(null)

@@ -10,13 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog"
 import { FormSection } from "@/components/patterns/form-section"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,7 +23,7 @@ import {
 } from "@/components/ui/empty"
 import { useData, canAccess } from "@/context/DataContext"
 import type { Category, SubCategory } from "@/lib/gaama-types"
-import { Plus, FolderTree, Trash2, Search, LayoutGrid, List, Eye, Pencil } from "lucide-react"
+import { Plus, FolderTree, Trash2, Search, LayoutGrid, List, Pencil } from "lucide-react"
 import { PageHeaderWithBack } from "@/components/patterns/page-header-with-back"
 import {
   Select,
@@ -54,8 +47,6 @@ import {
 const DOSE_UNITS = ["kGy", "Gy", "Mrad"]
 const STATUS_OPTIONS = ["Active", "Inactive"]
 
-type ModalMode = "create" | "edit" | "view" | null
-
 interface SubCategoryForm {
   id: string
   name: string
@@ -67,12 +58,7 @@ function generateId(): string {
 
 export function CategoriesPage() {
   const data = useData()
-  const [mode, setMode] = React.useState<ModalMode>(null)
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
-  const [form, setForm] = React.useState({
-    category_name: "",
-    description: "",
-  })
 
   // Full-page Add/Edit form state
   const [showForm, setShowForm] = React.useState(false)
@@ -114,15 +100,6 @@ export function CategoriesPage() {
     setNewSubName("")
     setSelectedId(c.category_id)
     setShowForm(true)
-  }
-
-  const openView = (c: Category) => {
-    setForm({
-      category_name: c.category_name,
-      description: c.description ?? "",
-    })
-    setSelectedId(c.category_id)
-    setMode("view")
   }
 
   const handleAddSubcategory = () => {
@@ -191,15 +168,6 @@ export function CategoriesPage() {
     setSelectedId(null)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (mode === "edit" && selectedId) {
-      data.updateCategory(selectedId, form)
-      setMode(null)
-    }
-  }
-
-  const isView = mode === "view"
   const filteredCategories = categories.filter(
     (c) =>
       (c.category_name ?? "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -220,7 +188,7 @@ export function CategoriesPage() {
             <div className="space-y-4 px-6 py-4 h-full">
           <div className="rounded-[10px] border border-border bg-card p-5 md:p-6 shadow-sm">
             <form onSubmit={handleSaveForm}>
-              <FormSection title="Category Details" className="[&>div]:h-fit">
+              <FormSection title="Category Details" compact noSeparator>
                 <div className="space-y-4 py-4">
                   <div className="grid h-fit grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
@@ -287,7 +255,7 @@ export function CategoriesPage() {
                 </div>
               </FormSection>
 
-              <FormSection title="Products">
+              <FormSection title="Products" compact noSeparator>
                 <div className="space-y-4 py-4">
                   <div className="flex gap-2">
                     <Input
@@ -440,9 +408,6 @@ export function CategoriesPage() {
                         <TableCell>{c.status ?? "—"}</TableCell>
                         <TableCell>{c.description ?? "—"}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" title="View" onClick={() => openView(c)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
                           <Button variant="ghost" size="sm" title="Edit" onClick={() => openEdit(c)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -480,9 +445,6 @@ export function CategoriesPage() {
                       <p className="text-sm line-clamp-2">{c.description}</p>
                     ) : null}
                     <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t">
-                      <Button variant="ghost" size="sm" title="View" onClick={() => openView(c)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
                       <Button variant="ghost" size="sm" title="Edit" onClick={() => openEdit(c)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -534,54 +496,6 @@ export function CategoriesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <Dialog open={mode !== null} onOpenChange={(open) => !open && setMode(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {mode === "view" ? "Category Details" : "Edit Category"}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <FormSection title="Details" noSeparator>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Category Name</Label>
-                  <Input
-                    value={form.category_name}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, category_name: e.target.value }))
-                    }
-                    readOnly={isView}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Input
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, description: e.target.value }))
-                    }
-                    readOnly={isView}
-                  />
-                </div>
-              </div>
-            </FormSection>
-            {!isView && (
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setMode(null)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Save</Button>
-              </DialogFooter>
-            )}
-          </form>
-        </DialogContent>
-      </Dialog>
     </PageShell>
   )
 }
